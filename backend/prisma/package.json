@@ -1,0 +1,6 @@
+{
+  "name": "backend",
+  "prisma": {
+    "schema": "./prisma/schema.prisma"
+  }
+}
