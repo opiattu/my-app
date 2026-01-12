@@ -1,18 +1,21 @@
-﻿export interface Room {
+
+export interface Room {
   id: string;
   code: string;
   name: string;
   capacity: number;
   equipment: string[];
-  status: 'available' | 'booked' | 'maintenance';
+  status: RoomStatus;
 }
+
+export type RoomStatus = 'available' | 'booked' | 'maintenance';
 
 export interface RoomFormPayload {
   code: string;
   name: string;
   capacity: number;
   equipment: string[];
-  status: string;
+  status: RoomStatus;
 }
 
 export interface Booking {
@@ -22,7 +25,7 @@ export interface Booking {
   date: string;
   startTime: string;
   endTime: string;
-  status: string;
+  status: BookingStatus;
   organizer: string;
   note?: string;
 }
@@ -35,9 +38,7 @@ export interface NewBookingPayload {
   date: string;
   startTime: string;
   endTime: string;
-  status?: string;
+  status?: BookingStatus;
   organizer: string;
   note?: string;
 }
-
-export type RoomStatus = 'available' | 'booked' | 'maintenance';

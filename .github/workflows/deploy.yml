@@ -1,4 +1,4 @@
-name: Deploy React App to GitHub Pages
+﻿name: Deploy React App to GitHub Pages
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
+          cache: "npm"
       
       - name: Install dependencies
         run: npm ci
@@ -28,17 +28,13 @@ jobs:
       - name: Build
         run: npm run build
       
-      - name: Show build files
-        run: ls -la dist/
-      
       - name: Setup Pages
         uses: actions/configure-pages@v3
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          \
-          path: 'dist'
+          path: "dist"
       
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v2
