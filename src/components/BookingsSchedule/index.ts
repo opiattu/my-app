@@ -1,1 +1,1 @@
-export * from "./BookingsSchedule";
+﻿export { BookingsSchedule } from "./BookingsSchedule";
