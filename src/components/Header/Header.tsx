@@ -20,7 +20,6 @@ export function Header({
   const navItems = [
     { id: "catalog", label: "Каталог аудиторий" },
     { id: "bookings", label: "Управление бронированием" },
-    { id: "settings", label: "Настройки" },
   ];
 
   return (

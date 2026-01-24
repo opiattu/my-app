@@ -1,165 +1,278 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
-import type { Booking, NewBookingPayload } from "../../types/global";
+﻿import React, { useState, useEffect } from 'react';
+import { useBookings } from '../../context/BookingContext';
+import styles from './BookingForm.module.css';
 
 interface BookingFormProps {
-  mode: "create" | "edit";
-  initialData?: Booking | null;
-  onCancel: () => void;
-  onSubmit: (payload: NewBookingPayload) => void;
+  onClose: () => void;
+  onSubmit: (data: any) => void;
 }
 
-export function BookingForm({
-  mode,
-  initialData,
-  onCancel,
-  onSubmit,
-}: BookingFormProps) {
-  const [form, setForm] = useState<NewBookingPayload>({
-    roomCode: initialData?.roomCode ?? "",
-    roomName: initialData?.roomName ?? "",
-    date: initialData?.date ?? "",
-    startTime: initialData?.startTime ?? "",
-    endTime: initialData?.endTime ?? "",
-    organizer: initialData?.organizer ?? "",
-    note: initialData?.note ?? "",
+const BookingForm: React.FC<BookingFormProps> = ({ onClose, onSubmit }) => {
+  const { getAvailableRooms, rooms, addBooking, bookings } = useBookings();
+  const [availableRooms, setAvailableRooms] = useState<any[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  
+  const [formData, setFormData] = useState({
+    roomId: '',
+    roomName: '',
+    date: '',
+    time: '',
+    organizer: '',
+    description: ''
   });
 
-  const handleChange =
-    (field: keyof NewBookingPayload) =>
-    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setForm((prev) => ({ ...prev, [field]: e.target.value }));
-    };
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-
-    if (
-      !form.roomCode ||
-      !form.date ||
-      !form.startTime ||
-      !form.endTime ||
-      !form.organizer
-    ) {
-      alert("Пожалуйста, заполните все обязательные поля (*)");
-      return;
+  useEffect(() => {
+    try {
+      const available = getAvailableRooms ? getAvailableRooms() : rooms;
+      setAvailableRooms(available);
+      
+      if (available.length > 0 && !formData.roomId) {
+        const firstRoom = available[0];
+        setSelectedRoom(firstRoom);
+        setFormData(prev => ({ 
+          ...prev, 
+          roomId: firstRoom.id,
+          roomName: firstRoom.name
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading rooms:', error);
+      setAvailableRooms(rooms);
     }
+  }, []);
 
-    onSubmit(form);
+  // Функция проверки бронирования
+  const validateBooking = (bookings: any[], newBooking: any): string | null => {
+    // Проверка на дублирование
+    const isDuplicate = bookings.some(booking => 
+      booking.roomId === newBooking.roomId &&
+      booking.date === newBooking.date &&
+      booking.time === newBooking.time
+    );
+    
+    if (isDuplicate) {
+      return 'На это время и дату уже есть бронирование для выбранной аудитории!';
+    }
+    
+    // Проверка на прошедшую дату
+    const today = new Date().toISOString().split('T')[0];
+    if (newBooking.date < today) {
+      return 'Нельзя создать бронирование на прошедшую дату!';
+    }
+    
+    return null;
   };
 
+  const handleRoomChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const roomId = e.target.value;
+    const room = rooms.find(r => r.id === roomId);
+    
+    if (room) {
+      setSelectedRoom(room);
+      setFormData(prev => ({ 
+        ...prev, 
+        roomId: room.id,
+        roomName: room.name
+      }));
+    }
+    setErrorMessage('');
+  };
+
+  const handleDateChange = (date: string) => {
+    setFormData(prev => ({ ...prev, date }));
+    setErrorMessage('');
+  };
+
+  const handleTimeChange = (time: string) => {
+    setFormData(prev => ({ ...prev, time }));
+    setErrorMessage('');
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+    
+    // Проверка обязательных полей
+    if (!formData.roomId || !formData.date || !formData.time || !formData.organizer) {
+      setErrorMessage('Пожалуйста, заполните все обязательные поля');
+      return;
+    }
+    
+    // Валидация бронирования
+    const validationError = validateBooking(bookings || [], formData);
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
+    
+    // Если все ок, создаем бронирование
+    try {
+      addBooking(formData);
+      onSubmit(formData);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Произошла ошибка при создании бронирования');
+    }
+  };
+
+  // Функция для проверки доступности времени
+  const isTimeSlotAvailable = () => {
+    if (!formData.roomId || !formData.date || !formData.time) return true;
+    
+    const currentBookings = bookings || [];
+    return !currentBookings.some(booking => 
+      booking.roomId === formData.roomId &&
+      booking.date === formData.date &&
+      booking.time === formData.time
+    );
+  };
+
+  // Получаем список занятых времен для выбранной аудитории и даты
+  const getBookedTimes = () => {
+    if (!formData.roomId || !formData.date) return [];
+    
+    const currentBookings = bookings || [];
+    return currentBookings
+      .filter(booking => 
+        booking.roomId === formData.roomId && 
+        booking.date === formData.date
+      )
+      .map(booking => booking.time)
+      .sort();
+  };
+
+  const bookedTimes = getBookedTimes();
+  const isAvailable = isTimeSlotAvailable();
+
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="filters-panel">
-        <div className="filters-header">
-          <h3 className="filters-title">
-            {mode === "create" ? " Новое бронирование" : " Редактирование бронирования"}
-          </h3>
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <h2 className={styles.title}>Новое бронирование</h2>
+      
+      {/* Показываем сообщение об ошибке */}
+      {errorMessage && (
+        <div className={styles.errorAlert}>
+          ⚠️ {errorMessage}
         </div>
-
-        <div className="filters-grid">
-          <div className="filter-group">
-            <label>Аудитория (номер)*</label>
-            <input
-              type="text"
-              className="filter-input"
-              placeholder="Например, 101"
-              value={form.roomCode}
-              onChange={handleChange("roomCode")}
-            />
-          </div>
-
-          <div className="filter-group">
-            <label>Название аудитории</label>
-            <input
-              type="text"
-              className="filter-input"
-              placeholder="Лекционная аудитория"
-              value={form.roomName}
-              onChange={handleChange("roomName")}
-            />
-          </div>
-
-          <div className="filter-group">
-            <label>Дата*</label>
-            <input
-              type="date"
-              className="filter-input"
-              value={form.date}
-              onChange={handleChange("date")}
-            />
-          </div>
-
-          <div className="filter-group">
-            <label>Время начала*</label>
-            <input
-              type="time"
-              className="filter-input"
-              value={form.startTime}
-              onChange={handleChange("startTime")}
-            />
-          </div>
-
-          <div className="filter-group">
-            <label>Время окончания*</label>
-            <input
-              type="time"
-              className="filter-input"
-              value={form.endTime}
-              onChange={handleChange("endTime")}
-            />
-          </div>
-
-          <div className="filter-group">
-            <label>Организатор*</label>
-            <input
-              type="text"
-              className="filter-input"
-              placeholder="ФИО преподавателя / ответственного"
-              value={form.organizer}
-              onChange={handleChange("organizer")}
-            />
+      )}
+      
+      {/* Показываем предупреждение если время занято */}
+      {!isAvailable && formData.roomId && formData.date && formData.time && (
+        <div className={styles.warningAlert}>
+          ⚠️ Это время уже занято! Выберите другое время.
+        </div>
+      )}
+      
+      {/* Показываем список занятых времен */}
+      {bookedTimes.length > 0 && formData.roomId && formData.date && (
+        <div className={styles.bookedTimes}>
+          <p><strong>Занятые времена на {formData.date}:</strong></p>
+          <div className={styles.timeChips}>
+            {bookedTimes.map(time => (
+              <span key={time} className={`${styles.timeChip} ${formData.time === time ? styles.timeChipSelected : ''}`}>
+                {time}
+              </span>
+            ))}
           </div>
         </div>
+      )}
+      
+      <div className={styles.formGroup}>
+        <label className={styles.label}>Выберите аудиторию *</label>
+        <select
+          value={formData.roomId}
+          onChange={handleRoomChange}
+          required
+          className={styles.select}
+        >
+          <option value="">-- Выберите аудиторию --</option>
+          {availableRooms.map(room => (
+            <option key={room.id} value={room.id}>
+              {room.name} ({room.capacity} чел.)
+            </option>
+          ))}
+        </select>
+        
+        {selectedRoom && (
+          <div className={styles.roomDetails}>
+            <p><strong>Выбрана:</strong> {selectedRoom.name}</p>
+            <p><strong>Вместимость:</strong> {selectedRoom.capacity} человек</p>
+            <p><strong>Оборудование:</strong> {selectedRoom.features?.join(', ') || 'Нет'}</p>
+          </div>
+        )}
+        
+        {availableRooms.length === 0 && (
+          <p className={styles.errorMessage}>
+            На данный момент нет доступных аудиторий для бронирования.
+          </p>
+        )}
+      </div>
 
-        <div style={{ marginTop: 16 }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 8,
-              fontWeight: 500,
-            }}
-          >
-            Примечание
-          </label>
-          <textarea
-            className="filter-input"
-            rows={3}
-            placeholder="Дополнительная информация..."
-            value={form.note}
-            onChange={handleChange("note")}
+      <div className={styles.formRow}>
+        <div className={styles.formGroup}>
+          <label className={styles.label}>Дата *</label>
+          <input 
+            type="date" 
+            value={formData.date}
+            onChange={(e) => handleDateChange(e.target.value)}
+            required
+            min={new Date().toISOString().split('T')[0]}
+            className={styles.input}
           />
         </div>
 
-        <div
-          style={{
-            marginTop: 24,
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 12,
-          }}
-        >
-          <button
-            type="button"
-            className="secondary-btn"
-            onClick={onCancel}
-          >
-            Отмена
-          </button>
-          <button type="submit" className="primary-btn">
-             {mode === "create" ? "Создать бронирование" : "Сохранить изменения"}
-          </button>
+        <div className={styles.formGroup}>
+          <label className={styles.label}>Время *</label>
+          <input 
+            type="time" 
+            value={formData.time}
+            onChange={(e) => handleTimeChange(e.target.value)}
+            required
+            className={`${styles.input} ${!isAvailable ? styles.inputError : ''}`}
+          />
         </div>
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.label}>Организатор *</label>
+        <input 
+          type="text" 
+          value={formData.organizer}
+          onChange={(e) => setFormData({...formData, organizer: e.target.value})}
+          required
+          placeholder="ФИО организатора"
+          className={styles.input}
+        />
+      </div>
+
+      <div className={styles.formGroup}>
+        <label className={styles.label}>Описание мероприятия</label>
+        <textarea 
+          value={formData.description}
+          onChange={(e) => setFormData({...formData, description: e.target.value})}
+          rows={3}
+          placeholder="Опишите цель мероприятия..."
+          className={styles.textarea}
+        />
+      </div>
+
+      <div className={styles.buttons}>
+        <button 
+          type="button" 
+          onClick={onClose}
+          className={styles.cancelBtn}
+        >
+          Отмена
+        </button>
+        <button 
+          type="submit" 
+          className={styles.submitBtn}
+          disabled={availableRooms.length === 0 || !isAvailable}
+        >
+          Создать бронирование
+        </button>
       </div>
     </form>
   );
-}
+};
+
+export default BookingForm;

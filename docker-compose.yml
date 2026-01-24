@@ -1,5 +1,15 @@
+version: '3.8'
+
 services:
-  frontend:
+  app:
     build: .
     ports:
-      - "8080:80"
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules  # предотвращаем перезапись node_modules
+    environment:
+      - HOST=0.0.0.0
+      - CHOKIDAR_USEPOLLING=true
+    stdin_open: true
+    tty: true

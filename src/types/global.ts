@@ -1,44 +1,49 @@
-
-export interface Room {
-  id: string;
-  code: string;
-  name: string;
-  capacity: number;
-  equipment: string[];
-  status: RoomStatus;
-}
-
-export type RoomStatus = 'available' | 'booked' | 'maintenance';
-
-export interface RoomFormPayload {
-  code: string;
-  name: string;
-  capacity: number;
-  equipment: string[];
-  status: RoomStatus;
-}
+// Добавьте или обновите интерфейсы:
 
 export interface Booking {
   id: string;
-  roomCode: string;
-  roomName: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: BookingStatus;
-  organizer: string;
-  note?: string;
+  resourceId: string;          // ID аудитории или инвентаря
+  resourceType: 'room' | 'asset'; // Тип ресурса
+  resourceName?: string;       // Название ресурса (опционально)
+  start: Date;                // Начало бронирования
+  end: Date;                  // Конец бронирования
+  organizer: string;          // Организатор
+  title: string;              // Название мероприятия
+  description?: string;       // Описание (вместо note)
+  status?: 'pending' | 'confirmed' | 'cancelled';
+  createdAt?: Date;
 }
 
-export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
-
+// Для формы бронирования:
 export interface NewBookingPayload {
-  roomCode: string;
-  roomName?: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status?: BookingStatus;
+  resourceId: string;
+  resourceType: 'room' | 'asset';
+  start: Date;
+  end: Date;
+  organizer: string;
+  title: string;
+  description?: string;
+}
+
+// Альтернативно, если хотите сохранить старые поля:
+export interface BookingFormData {
+  roomCode?: string;          // Устаревшее, лучше использовать resourceId
+  roomName?: string;          // Устаревшее
+  date?: Date;
+  startTime?: string;
+  endTime?: string;
   organizer: string;
   note?: string;
+  resourceId: string;
+  resourceType: 'room' | 'asset';
+  title: string;
 }
+
+// Или объедините:
+export type BookingInput = Partial<NewBookingPayload> & {
+  date?: Date;
+  startTime?: string;
+  endTime?: string;
+  note?: string;
+};
+

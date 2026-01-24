@@ -4,7 +4,7 @@ interface BookingsScheduleProps {
   bookings: Booking[];
 }
 
-const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 
 const getHourLabel = (h: number) => `${h.toString().padStart(2, "0")}:00`;
 
@@ -58,7 +58,7 @@ export function BookingsSchedule({ bookings }: BookingsScheduleProps) {
           `Дата: ${currentDate}`,
           `Время: ${time}`,
           "",
-          'Можно создать бронирование через кнопку "Создать бронирование".',
+          'Можно создать бронирование через кнопку "Оформить бронировниебронирование".',
         ].join("\n")
       );
     }

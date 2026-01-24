@@ -1,0 +1,67 @@
+﻿/* src/components/BookingsTable/BookingsTable.module.css */
+.tableContainer {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tableHeader {
+  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+  color: white;
+}
+
+.headerCell {
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.tableRow {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.tableRow:hover {
+  background-color: #ffebee;
+}
+
+.tableCell {
+  padding: 16px;
+  color: #495057;
+}
+
+.roomName {
+  font-weight: 600;
+}
+
+.deleteBtn {
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #ef5350, #d32f2f);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.deleteBtn:hover {
+  background: linear-gradient(135deg, #f44336, #c62828);
+}
+
+.noData {
+  padding: 40px;
+  text-align: center;
+  background: #ffebee;
+  border-radius: 8px;
+  color: #666;
+  margin-top: 20px;
+}
